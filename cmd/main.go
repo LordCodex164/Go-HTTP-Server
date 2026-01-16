@@ -18,14 +18,20 @@ func main() {
 	mux.HandleFunc("/", handlers.Home)
 	mux.HandleFunc("/health", handlers.Health)
 	mux.HandleFunc("/api/v1/users", handlers.Users)
+	mux.HandleFunc("/panic", handlers.Panic)
 
-	handler := middleware.Logger(mux)
+	//building the middleware chain recovery => request id => logger => handler
+	handler := middleware.Recovery(
+		middleware.RequestID(
+		middleware.Logger(mux),
+		),
+	)
 
 	server := http.Server{
 		Addr: ":8080",
 		Handler: handler,
 	}
-	//start server 
+	//start server
 	log.Println("Server starting on :8080")
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)

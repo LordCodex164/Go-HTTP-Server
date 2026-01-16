@@ -11,12 +11,16 @@ func Logger(next http.Handler) http.Handler {
 		//current date
 		start := time.Now()
 
+		// Get request ID from context
+		requestID := GetRequestID(r.Context())
+
 		//call the next handler
 		next.ServeHTTP(w, r)
 
 		//log after handler 
 		log.Printf(
-			"%s %s %s %v",
+			"[%s] %s %s %s %v",
+			requestID,
 			r.Method,
 			r.RequestURI,
 			r.RemoteAddr,

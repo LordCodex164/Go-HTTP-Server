@@ -73,3 +73,8 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	//writing the json encoding of user to the output value
 	json.NewEncoder(w).Encode(user)
 }
+
+// Panic handler (for testing recovery)
+func Panic(w http.ResponseWriter, r *http.Request) {
+	panic("intentional panic for testing recovery middleware")
+}
