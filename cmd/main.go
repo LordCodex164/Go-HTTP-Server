@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
 	"github.com/LordCodex164/httpserver/internal/handlers"
+	"github.com/LordCodex164/httpserver/internal/middleware"
 )
 
 func main() {
@@ -15,11 +17,13 @@ func main() {
 	//register handlers 
 	mux.HandleFunc("/", handlers.Home)
 	mux.HandleFunc("/health", handlers.Health)
-	mux.HandleFunc("/users", handlers.Users)
-	
+	mux.HandleFunc("/api/v1/users", handlers.Users)
+
+	handler := middleware.Logger(mux)
+
 	server := http.Server{
 		Addr: ":8080",
-		Handler: mux,
+		Handler: handler,
 	}
 	//start server 
 	log.Println("Server starting on :8080")
