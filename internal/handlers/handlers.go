@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 // Home handler
-func Home(w http.ResponseWriter, r *http.Request) {
+func Home(w http.ResponseWriter, r *http.Request)  {
 	// Only allow GET
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -77,4 +78,17 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 // Panic handler (for testing recovery)
 func Panic(w http.ResponseWriter, r *http.Request) {
 	panic("intentional panic for testing recovery middleware")
+}
+
+// Slow handler (for testing timeout)
+func Slow(w http.ResponseWriter, r *http.Request) {
+	// Check if context was cancelled
+	select {
+	case <-r.Context().Done():
+		// Context cancelled (timeout or client disconnect)
+		return
+	case <-time.After(10 * time.Second):
+		// Simulate slow operation
+		fmt.Fprintf(w, "This took 10 seconds\n")
+	}
 }
