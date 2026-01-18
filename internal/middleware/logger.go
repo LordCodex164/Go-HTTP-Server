@@ -21,8 +21,6 @@ func Logger(next http.Handler) http.Handler {
 		//call the next handler
 		next.ServeHTTP(wrapped, r)
 
-		log.Println(">>>r", r.Response)
-
 		//calculate latency
 		latency := time.Since(start)
 
