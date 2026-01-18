@@ -12,6 +12,7 @@ import (
 
 	"github.com/LordCodex164/httpserver/internal/handlers"
 	"github.com/LordCodex164/httpserver/internal/middleware"
+	"github.com/LordCodex164/httpserver/internal/logger"
 	"golang.org/x/time/rate"
 )
 
@@ -20,10 +21,13 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	structuredLogger := logger.New()
+
 	//register handlers 
 	mux.HandleFunc("/", handlers.Home)
 	mux.HandleFunc("/health", handlers.Health)
 	mux.HandleFunc("/api/v1/users", handlers.Users)
+	mux.HandleFunc("/metrics", handlers.Metrics)
 	mux.HandleFunc("/panic", handlers.Panic)
 	mux.HandleFunc("/slow", handlers.Slow) //this handler takes 10 seconds
 
@@ -33,14 +37,14 @@ func main() {
 
 	//building the middleware chain recovery => request id => logger => handler
 	handler := middleware.Recovery(
-		middleware.RequestID(rateLimiter.Limit(middleware.Timeout(5 * time.Second)(middleware.Logger(mux)))),
+		middleware.RequestID((middleware.Timeout(5 * time.Second)(middleware.Logger(mux)))),
 	)
 
 	server := http.Server{
 		Addr: ":8081",
 		Handler: handler,
 		ReadTimeout: 5 * time.Second,
-		WriteTimeout: 5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 		IdleTimeout: 120 * time.Second,
 	}
 
@@ -51,6 +55,10 @@ func main() {
 	//start server in a goroutine
 	go func() {
     //start server
+	structuredLogger.Info("Server Starting", map[string]interface{}{
+		"addr": 3000,
+		"request_timeout": "http://localhost:8081",
+	})
 	log.Println("Server starting on http://localhost:8081")
 	log.Println("⏱️  Request timeout: 5s")
 	log.Println("Press Ctrl+C to stop")
@@ -62,9 +70,9 @@ func main() {
 
 	//wait for interrupt signal
 	<-stop
-	log.Println("\n Shutting Down gracefully")
+	structuredLogger.Info("\n Shutting Down gracefully", map[string]interface{}{})
 
-	//create shutdown contet with timeout
+	//create shutdown context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // maximum shutdown timeout window of 30secs
 
 	defer cancel()

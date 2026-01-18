@@ -77,6 +77,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 // Panic handler (for testing recovery)
 func Panic(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusInternalServerError)
 	panic("intentional panic for testing recovery middleware")
 }
 
@@ -89,6 +90,8 @@ func Slow(w http.ResponseWriter, r *http.Request) {
 		return
 	case <-time.After(10 * time.Second):
 		// Simulate slow operation
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusRequestTimeout)
 		fmt.Fprintf(w, "This took 10 seconds\n")
 	}
 }

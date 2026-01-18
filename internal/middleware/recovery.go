@@ -7,6 +7,8 @@ import (
 
 func Recovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		
+
 		defer func () {
 			//it allows the program to manage the behaviour of a panicking goroutine
 			if err := recover(); err != nil {

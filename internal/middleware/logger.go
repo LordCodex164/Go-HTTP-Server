@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/LordCodex164/httpserver/internal/metrics"
 )
 
 func Logger(next http.Handler) http.Handler {
@@ -14,16 +16,30 @@ func Logger(next http.Handler) http.Handler {
 		// Get request ID from context
 		requestID := GetRequestID(r.Context())
 
+		wrapped := NewResponseWriter(w)
+
 		//call the next handler
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(wrapped, r)
+
+		log.Println(">>>r", r.Response)
+
+		//calculate latency
+		latency := time.Since(start)
+
+		metrics.GetInstance().RecordRequest(
+			wrapped.StatusCode(),
+			latency,
+			r.URL.Path,
+		)
 
 		//log after handler 
 		log.Printf(
-			"[%s] %s %s %s %v",
+			"[%s] %s %s %s %d %v",
 			requestID,
 			r.Method,
 			r.RequestURI,
 			r.RemoteAddr,
+			wrapped.StatusCode(),
 			time.Since(start),
 		)
 	})

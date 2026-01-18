@@ -1,11 +1,9 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
 	"sync"
 	"time"
-
 	"golang.org/x/time/rate"
 )
 
@@ -28,20 +26,16 @@ func NewRateLimiter (r rate.Limit, b int) *RateLimiter {
 }
 
 func (rl *RateLimiter) getLimiter(ip string) *rate.Limiter {
-	log.Println(">>>rl", rl.rate, rl.burst)
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
 	limiter, exists := rl.limiters[ip]
 	//if the limiter does not exist for the ip address, create a new limiter
 	if !exists {
-		log.Println(">>exists")
 		limiter = rate.NewLimiter(rl.rate, rl.burst)
 		rl.limiters[ip] = limiter
 		return limiter
 	}
-
-	log.Printf(">>>>>l : %v", limiter.Allow())
 
 	return limiter
 }
@@ -50,8 +44,6 @@ func (rl *RateLimiter) Limit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Get client IP
 		ip := r.RemoteAddr
-
-		log.Println(">>>ip", ip)
 
 		// Get limiter for this IP
 		limiter := rl.getLimiter(ip)
@@ -73,14 +65,8 @@ func (rl *RateLimiter) Cleanup() {
 
 	for range ticker.C {
 		rl.mu.Lock()
+		defer rl.mu.Unlock()
 
-
-		rl.mu.Unlock()
 	}
-}
-
-const rateLimit = time.Second / 10
-
-func (rl *RateLimiter) RateLimitCall() {
 
 }

@@ -13,3 +13,7 @@ This is a simple HTTP server built with Go. It is a basic server that can handle
     - It logs the request and response
 - Panic handler for testing recovery middleware:
     - It panics to test the recovery middleware
+
+- Bugs
+    - rate limit not working
+    - unable to access metrics of few endpoints

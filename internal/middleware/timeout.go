@@ -24,19 +24,25 @@ func Timeout(duration time.Duration) func(http.Handler) http.Handler {
 			done := make(chan struct{})
 
 			go func() {
-				next.ServeHTTP(w, r)
-				close(done)
+				defer close(done)
+
+				// RECOVERY MUST BE HERE
+				defer func() {
+					if err := recover(); err != nil {
+						log.Printf("PANIC in handler: %v", err)
+						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					}
+				}()
+
+				next.ServeHTTP(w, r.WithContext(ctx))
 			}()
 
 			select {
-			case <- done:
-				//Handler completed successfully
-				log.Println("Handler completed successfully")
+			case <-done:
 				return
-			case <- ctx.Done():
-				// Timeout exceeded
-				log.Println("Handler didn't complete")
-				http.Error(w, "Request timeout", http.StatusRequestTimeout)
+			case <-ctx.Done():
+				http.Error(w, "Request Timeout", http.StatusGatewayTimeout)
+				return
 			}
 		})
 	}
