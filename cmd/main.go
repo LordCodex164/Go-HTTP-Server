@@ -9,11 +9,12 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
 	"github.com/LordCodex164/httpserver/internal/handlers"
 	"github.com/LordCodex164/httpserver/internal/middleware"
 	"github.com/LordCodex164/httpserver/internal/logger"
+	"github.com/LordCodex164/httpserver/internal/config"
 	"golang.org/x/time/rate"
+	"github.com/lpernett/godotenv"
 )
 
 func main() {
@@ -22,6 +23,9 @@ func main() {
 	mux := http.NewServeMux()
 
 	structuredLogger := logger.New()
+
+	cfg := config.Load()
+
 
 	//register handlers 
 	mux.HandleFunc("/", handlers.Home)
@@ -41,11 +45,11 @@ func main() {
 	)
 
 	server := http.Server{
-		Addr: ":8081",
+		Addr: cfg.Server.Addr(),
 		Handler: handler,
-		ReadTimeout: 5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout: 120 * time.Second,
+		ReadTimeout: cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		IdleTimeout: cfg.Server.IdleTimeout,
 	}
 
 	//channel to list for interrupt signals
@@ -56,16 +60,18 @@ func main() {
 	go func() {
     //start server
 	structuredLogger.Info("Server Starting", map[string]interface{}{
-		"addr": 3000,
-		"request_timeout": "http://localhost:8081",
+		"addr": cfg.Server.Addr(),
+		"request_timeout": "5",
+		"note": "please press ctrl + c to stop",
 	})
-	log.Println("Server starting on http://localhost:8081")
-	log.Println("⏱️  Request timeout: 5s")
-	log.Println("Press Ctrl+C to stop")
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, relying on environment variables")
+	}	
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Hello, World!")
+
 	}() 
 
 	//wait for interrupt signal

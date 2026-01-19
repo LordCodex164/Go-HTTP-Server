@@ -1,0 +1,79 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Download dependencies
+        run: go mod download
+      
+      - name: Run tests
+        run: go test ./... -v
+      
+      - name: Build
+        run: go build -v .
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Build Docker image
+        run: docker build -t httpserver:${{ github.sha }} .
+      
+      - name: Test Docker image
+        run: |
+          docker run -d -p 8080:8080 --name test-server httpserver:${{ github.sha }}
+          sleep 5
+          curl -f http://localhost:8080/health || exit 1
+          docker stop test-server
+```
+
+---
+
+## Step 8: .gitignore
+
+### Create `.gitignore`
+```
+# Binaries
+httpserver
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+*.out
+
+# Go workspace file
+go.work
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
